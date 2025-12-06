@@ -5,7 +5,7 @@
 # import os
 # from tools.computer_use.AgentS.runner import run_computer_use_with_query
 
-# os.environ["GOOGLE_API_KEY"] = "AIzaSyAWtjKoVhYlYCElHVk6Xt75G5RnPkDUQvM"
+# os.environ["GOOGLE_API_KEY"] = ""
 
 # system_prompt = """
 # Bạn là một trợ lý hỗ trợ lên kế hoạch và kiểm tra tiến độ. Nhiệm vụ của bạn là nhận yêu cầu từ người dùng, yêu cầu này là một tác vụ tự động hóa trên máy tính, sau đó lên kế hoạch chi tiết theo từng bước bằng tiếng anh từ yêu cầu đó sao cho một agent computer use khác dễ hiểu và thực hiện theo. Ví dụ:
