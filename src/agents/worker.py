@@ -24,5 +24,8 @@ class Worker(BaseModule):
                 "messages": [{"role": "user", "content": query}]
             }
         )
-        signal = response['messages'][1].content[0]['text']
+        try:
+            signal = response['messages'][1].content[0]['text']
+        except:
+            signal = response['messages'][1].content
         return signal
