@@ -4,7 +4,7 @@
 uv venv
 ```
 
-### Active env
+### Activate env
 ```
 .venv\Scripts\activate
 ```
