@@ -3,7 +3,7 @@
 uv venv
 
 ## Active env
-.venv\Scripts\activate        # Windows
+.venv\Scripts\activate
 
 ## Install dependencies
 uv sync or pip install -r requirements.txt
