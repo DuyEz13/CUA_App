@@ -17,7 +17,7 @@ engine_params = {
     "engine_type": "gemini",
     "model": "gemini-2.5-flash",
     "base_url": "https://generativelanguage.googleapis.com/v1beta",
-    "api_key": "AIzaSyCf2UGdSxr1I4uNdHT2oCLni8SXw011mLA",
+    "api_key": "",
     "temperature": None,
 }
 
