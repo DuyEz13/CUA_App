@@ -18,7 +18,7 @@ class PlannerGraph:
         self.checkpointer = InMemorySaver()
         self.graph = self.build_graph()
 
-    # ------------------- NODES ----------------------
+    # NODES
 
     def node_make_plan(self, state: PlannerState):
         plan_text = self.llm.plan_predict(state.query)
@@ -65,14 +65,14 @@ class PlannerGraph:
             "decision": "CONTINUE",
         }
 
-    # ------------------- CONDITIONAL EDGES ----------------------
+    # CONDITIONAL EDGES
 
     def route_after_verify(self, state: PlannerState):
         if state.decision == "END":
             return "end"
         return "continue"
 
-    # ------------------- CUA TOOL EXECUTION ----------------------
+    # CUA EXECUTION
 
     def node_cua_execute(self, state: PlannerState):
         step = state.refined_step or state.steps[state.current_step]
@@ -89,8 +89,6 @@ class PlannerGraph:
             "response": response,
             "cua_result": cua_result,
         }
-
-    # ------------------- BUILD GRAPH ----------------------
 
     def build_graph(self):
         g = StateGraph(PlannerState)
