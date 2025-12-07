@@ -22,7 +22,7 @@ pip install -r requirements.txt
 Add Google API Key in app_test.py and CUA_App/src/tools/computer_use/AgentS/cli_app.py.
 
 ## How to run
-Modify screenshot folder path in CUA_App/src/tools/computer_use/AgentS/cli_app.py.
+Modify screenshot folder path in CUA_App/src/app_test.py and CUA_App/src/tools/computer_use/AgentS/cli_app.py.
 
 ```
 cd src
