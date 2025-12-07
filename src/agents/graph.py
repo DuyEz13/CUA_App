@@ -30,12 +30,18 @@ class PlannerGraph:
 
     def node_verify(self, state: PlannerState):
         if state.human_approved is True:
-            print("Human approved - continuing...")
-            return {
-                "approved": True,
-                "decision": "CONTINUE",
-                "human_approved": None
-            }
+            if state.current_step == len(state.steps):
+                return {
+                    "approved": True,
+                    "decision": "END",
+                    "human_approved": None
+                }
+            else:                
+                return {
+                    "approved": True,
+                    "decision": "CONTINUE",
+                    "human_approved": None
+                }
 
         if state.current_step == len(state.steps):
             return {"decision": "END"}
