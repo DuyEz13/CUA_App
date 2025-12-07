@@ -11,7 +11,11 @@ uv venv
 
 ### Install dependencies
 ```
-uv sync or pip install -r requirements.txt
+uv sync
+```
+or
+```
+pip install -r requirements.txt
 ```
 
 ### Add API Key
