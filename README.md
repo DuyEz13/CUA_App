@@ -14,7 +14,7 @@ Add Google API Key in app_test.py and CUA_App/src/tools/computer_use/AgentS/cli_
 # How to run
 Modify screenshot folder path in CUA_App/src/tools/computer_use/AgentS/cli_app.py.
 
-cd src
+<pre> ```cd src``` </pre>
 
 python app_test.py. 
 
