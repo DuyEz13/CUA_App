@@ -26,7 +26,7 @@ Modify screenshot folder path in CUA_App/src/app_test.py and CUA_App/src/tools/c
 
 ```
 cd src
-python app_test.py. 
+python app_test.py 
 ```
 
 While the application is running, if a task encounters a situation requiring user intervention (e.g., login or CAPTCHA), the application will pause and display a notification. The user completes the required action, types ‘continue’ in the application’s chat window, and then minimizes the application window to allow the task to resume. Once the task is completed, the application will notify the user to review the result.
