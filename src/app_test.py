@@ -233,11 +233,11 @@ class MainWindow(QWidget):
 
     def handle_finish(self, result):
         if isinstance(result, dict) and result.get("status") == "WAIT_USER":
-            self.log_box.append("!!! Graph paused — enter 'continue' to resume")
+            self.log_box.append("!!! Task paused — enter 'continue' to resume")
             self.bring_to_front()
             return
 
-        self.log_box.append("--- GRAPH FINISHED ---")
+        self.log_box.append("--------- TASK FINISHED ---------")
         self.log_box.append(str(result))
         self.bring_to_front()
 
