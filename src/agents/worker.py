@@ -10,6 +10,7 @@ class Worker(BaseModule):
     def reset(self):
         self.agent = self._create_agent(system_prompt=PROMPT.PLANNING)
         self.v_agent = self._create_agent_lang(system_prompt=PROMPT.VERIFING)
+        #self.v_agent = self._create_agent(system_prompt=PROMPT.VERIFING)
 
     def plan_from_query(self, query: str):
         self.agent.add_message(text_content=query, role="user")
@@ -29,3 +30,9 @@ class Worker(BaseModule):
         except:
             signal = response['messages'][1].content
         return signal
+
+        # self.v_agent.add_message(text_content=query, role="user")
+        # signal = call_llm_safe(
+        #     self.v_agent
+        # )
+        # return signal
