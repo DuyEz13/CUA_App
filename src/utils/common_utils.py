@@ -41,7 +41,7 @@ def call_llm_safe(
     response = ""
     while attempt < max_retries:
         try:
-            response = agent.get_response(
+            response, full_rp = agent.get_response(
                 temperature=temperature, use_thinking=use_thinking, **kwargs
             )
             assert response is not None, "Response from agent should not be None"
@@ -53,7 +53,7 @@ def call_llm_safe(
             if attempt == max_retries:
                 print("Max retries reached. Handling failure.")
         time.sleep(1.0)
-    return response if response is not None else ""
+    return response if response is not None else "", full_rp
 
 
 def call_llm_formatted(generator, format_checkers, **kwargs):
@@ -247,3 +247,115 @@ def parse_last_step(text: str):
         "grounded_action": grounded_action,
         "signal": signal
     }
+
+STEP_RE = re.compile(r"🔄 Step (\d+)/\d+")
+MODEL_RE = re.compile(r"model='([^']+)'")
+PROMPT_RE = re.compile(r"prompt_tokens=(\d+)")
+COMPLETION_RE = re.compile(r"completion_tokens=(\d+)")
+TOTAL_RE = re.compile(r"total_tokens=(\d+)")
+
+def parse_token_usage(stdout: str):
+    calls = []
+
+    last_step_context = "Unknown"
+
+    inside_block = False
+    buffer = []
+    paren_balance = 0
+    block_context = None
+
+    for line in stdout.splitlines():
+        # 1. Update step context
+        step_match = STEP_RE.search(line)
+        if step_match:
+            step = step_match.group(1)
+            last_step_context = f"Step {step}"
+            continue
+
+        # 2. Start ChatCompletion block
+        if "ChatCompletion(" in line:
+            inside_block = True
+            buffer = [line]
+            paren_balance = line.count("(") - line.count(")")
+            block_context = last_step_context  # ✅ snapshot context
+            continue
+
+        # 3. Collect block
+        if inside_block:
+            buffer.append(line)
+            paren_balance += line.count("(")
+            paren_balance -= line.count(")")
+
+            if paren_balance == 0:
+                block = "\n".join(buffer)
+                inside_block = False
+
+                model = MODEL_RE.search(block)
+                prompt = PROMPT_RE.search(block)
+                completion = COMPLETION_RE.search(block)
+                total = TOTAL_RE.search(block)
+
+                if all([model, prompt, completion, total]):
+                    calls.append({
+                        "model": model.group(1),
+                        "context": block_context,
+                        "input_tokens": int(prompt.group(1)),
+                        "output_tokens": int(completion.group(1)),
+                        "total_tokens": int(total.group(1)),
+                    })
+
+    return calls
+
+def _calculate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
+        """
+        Calculate estimated cost based on model pricing
+        
+        Pricing as of Dec 2024 (adjust these rates as needed):
+        """
+        pricing = {
+            "gpt-5": {
+                "input": 0.000002,  # $2 per 1M tokens (example)
+                "output": 0.000006  # $6 per 1M tokens (example)
+            },
+            "gpt-4": {
+                "input": 0.00003,   # $30 per 1M tokens
+                "output": 0.00006   # $60 per 1M tokens
+            },
+            "gpt-4-turbo": {
+                "input": 0.00001,   # $10 per 1M tokens
+                "output": 0.00003   # $30 per 1M tokens
+            },
+            "gpt-3.5-turbo": {
+                "input": 0.0000005,  # $0.50 per 1M tokens
+                "output": 0.0000015  # $1.50 per 1M tokens
+            },
+            "gemini-2.5-flash": {
+                "input": 0.00000003,   # $0.30 per 1M tokens
+                "output": 0.00000025   # $2.50 per 1M tokens
+            }
+        }
+        
+        # Default to GPT-4 pricing if model not found
+        rates = pricing.get(model, pricing.get("gpt-4"))
+        
+        input_cost = input_tokens * rates["input"]
+        output_cost = output_tokens * rates["output"]
+        
+        return input_cost + output_cost
+
+def write_token_log_txt(calls, path: str):
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("=" * 100 + "\n")
+        f.write("TOKEN USAGE LOG\n")
+        f.write("=" * 100 + "\n")
+
+        for idx, call in enumerate(calls, 1):
+            total_cost = _calculate_cost(call['model'], call['input_tokens'], call['output_tokens'])
+            f.write(f"Call #{idx}\n")
+            f.write(f"Model: {call['model']}\n")
+            f.write(f"Context: {call['context']}\n")
+            f.write(f"Input Tokens: {call['input_tokens']:,}\n")
+            f.write(f"Output Tokens: {call['output_tokens']:,}\n")
+            f.write(f"Total Tokens: {call['total_tokens']:,}\n")
+            f.write(f"Total Estimated Cost: ${total_cost:.6f}\n")
+            f.write("-" * 100 + "\n")
