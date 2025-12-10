@@ -40,6 +40,8 @@ class PlannerGraph:
         self.checkpointer = InMemorySaver()
         self.graph = self.build_graph()
         self.engine_params = engine_params
+        self.interrupt_tracker = 0
+        self.frl = []
 
     # NODES
 
@@ -54,19 +56,19 @@ class PlannerGraph:
         }
 
     def node_verify(self, state: PlannerState):
-        if state.human_approved is True:
-            if state.current_step == len(state.steps):
-                return {
-                    "approved": True,
-                    "decision": "END",
-                    "human_approved": None
-                }
-            else:                
-                return {
-                    "approved": True,
-                    "decision": "CONTINUE",
-                    "human_approved": None
-                }
+        # if state.human_approved is True:
+        #     if state.current_step == len(state.steps):
+        #         return {
+        #             "approved": True,
+        #             "decision": "END",
+        #             "human_approved": None
+        #         }
+        #     else:                
+        #         return {
+        #             "approved": True,
+        #             "decision": "CONTINUE",
+        #             "human_approved": None
+        #         }
 
         if state.current_step == len(state.steps):
             return {"decision": "END"}
@@ -77,20 +79,23 @@ class PlannerGraph:
             verify_result, full_rp = self.llm.verify_predict(cua_result_str)
             _track_graph_node_tokens(state.current_step, full_rp, self.engine_params['model'], "Verifying Agent")
             reason = verify_result[2:]
-            frl = state.fail_reason_list.append(reason)
+            print(reason)
             if (verify_result[0] == 'A'):
-                #reason = verify_result[2:]
+                self.interrupt_tracker = self.interrupt_tracker + 1
+                if self.interrupt_tracker % 2 == 1:
+                    self.frl = state.fail_reason_list + [reason]
+                    print(self.frl)
                 human_approved = interrupt(reason)
                 return {
-                    "approved": False,
+                    # "approved": False,
                     "human_approved": human_approved,  
                     "interrupt_reason": reason,
-                    "fail_reason_list": frl
+                    "fail_reason_list": self.frl
                 }
             else:
                 return{
                     'current_step': state.current_step - 1,
-                    "fail_reason_list": frl
+                    "fail_reason_list": self.frl
                 }
                 #state.current_step = state.current_step - 1
 
