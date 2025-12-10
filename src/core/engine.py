@@ -63,7 +63,7 @@ class LMMEngineOpenAI(LMMEngine):
                 **kwargs,
             )
         print(msg)
-        return msg.choices[0].message.content
+        return msg.choices[0].message.content, msg
         # return (
         #     self.llm_client.chat.completions.create(
         #         model=self.model,
@@ -208,7 +208,7 @@ class LMMEngineGemini(LMMEngine):
                 **kwargs,
             )
         print(msg)
-        return msg.choices[0].message.content
+        return msg.choices[0].message.content, msg
         
         # return (
         #     self.llm_client.chat.completions.create(
@@ -340,7 +340,7 @@ class LMMEngineOpenRouter(LMMEngine):
                 **kwargs,
             )
         print(msg)
-        return msg.choices[0].message.content
+        return msg.choices[0].message.content, msg
 
         # return (
         #     self.llm_client.chat.completions.create(
