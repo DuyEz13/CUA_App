@@ -14,14 +14,28 @@ class Planner:
         self.executor = Worker(self.engine_params)
 
     def plan_predict(self, query: str):
-        self.full_plan = self.executor.plan_from_query(query)
-        for part in self.full_plan.split("Step "):
-            part = part.strip()
-            if part and part[0].isdigit():
-                step_text = step_text = re.sub(r"^\d+\.\s*", "", part)
+        self.full_plan, full_rp = self.executor.plan_from_query(query)
+        # for part in self.full_plan.split("Step "):
+        #     part = part.strip()
+        #     if part and part[0].isdigit():
+        #         step_text = step_text = re.sub(r"^\d+\.\s*", "", part)
+        #         self.full_step.append(step_text)
+        header_re = re.compile(
+            r"(?:(?<=^)|(?<=\n)|(?<=[\.\:\;\?\!\"'\)\(]))\s*Step\s+(\d+)\.\s*", re.DOTALL
+        )
+
+        matches = list(header_re.finditer(self.full_plan))
+
+        if matches:
+            for i, m in enumerate(matches):
+                start = m.end()
+                end = matches[i + 1].start() if i + 1 < len(matches) else len(self.full_plan)
+                #step_num = int(m.group(1))
+                step_text = self.full_plan[start:end].strip()
                 self.full_step.append(step_text)
-        return self.full_step
+
+        return self.full_step, full_rp
     
     def verify_predict(self, query):
-        self.verify_cua_result = self.executor.verify_cua_result(query)
-        return self.verify_cua_result
+        self.verify_cua_result, full_rp = self.executor.verify_cua_result(query)
+        return self.verify_cua_result, full_rp
