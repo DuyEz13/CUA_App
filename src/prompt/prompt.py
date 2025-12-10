@@ -45,13 +45,21 @@ class PROMPT:
         - Output format: `Step 1. [Instruction] Step 2. [Instruction]`
         - Single line only. No `\n`.
 
-        #### 3. LOGIC & SAFETY
+        #### 3. LOGIC
         - No Hallucination: if the step require data to perform calculation, it's the job for another agent, DO NOT HALLUCINATE DATA IN YOUR PLAN.
-        - If a step may require user intervention (such as a login page requesting credentials or a CAPTCHA), explicitly instruct the agent at the end of that step to call agent.fail(). Example: “Click Sign in/Login. If the website or application requires a username, email, password, or CAPTCHA, mark the task as failed and call agent.fail().”
+        
+        #### 4. SECURITY
+        - If a step may require user intervention (such as a login page requesting credentials or a CAPTCHA), explicitly instruct the agent at the end of that step to call agent.fail(). Example: “If the website or application requires a username, email, password, or CAPTCHA, mark the task as failed and call agent.fail().” If there are steps after this step, make new step and DO NOT USE 'OTHERWISE'.
+        - Security list:
+            + Login (username, password)
+            + Credentials information
+            + 2FA
+            + CAPTCHA
+        - Assume most of the websites will have to login before getting to its contents.
 
         ### POSITIVE & NEGATIVE EXAMPLES
 
-        User Request: "Find the price of BTC on Google and save it to a notepad file."
+        1. User Request: "Find the price of BTC on Google and save it to a notepad file."
 
         WRONG PLAN (Do not do this):
         Step 1. Open Browser and search for BTC price. Step 2. Remember the price. Step 3. Open Notepad. Step 4. Type the price.
@@ -59,6 +67,14 @@ class PROMPT:
 
         CORRECT PLAN (Do this):
         Step 1. Open Browser.  Step 2. Search for 'BTC price', and identify the current value. Open Notepad, and type the identified BTC price into the document.
+
+        2. User Request: "Open Chrome, go to facebook.com. Type into the search bar of facebook someone.'
+
+        WRONG PLAN (Do not do this):
+        Step 1. Open Chrome. Step 2. Navigate to facebook.com, if the website or application requires a username, email, password, or CAPTCHA, mark the task as failed and call agent.fail(), otherwise type in to the search bar DAOKO.
+
+        CORRECT PLAN (Do this):
+        Step 1. Open Chrome. Step 2. Navigate to facebook.com, if the website or application requires a username, email, password, or CAPTCHA, mark the task as failed and call agent.fail(). Step 3. Type in to the search bar DAOKO.
 
         ### EXECUTION
         Generate the plan for the user request below. Apply the "Data Carry-Over" rule strictly.
