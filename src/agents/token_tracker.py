@@ -127,8 +127,12 @@ class TokenUsageLogger:
                 "output": 0.0000015  # $1.50 per 1M tokens
             },
             "gemini-2.5-flash": {
-                "input": 0.00000003,   # $0.30 per 1M tokens
-                "output": 0.00000025   # $2.50 per 1M tokens
+                "input": 0.0000003,   # $0.30 per 1M tokens
+                "output": 0.0000025   # $2.50 per 1M tokens
+            },
+            "bytedance/ui-tars-1.5-7b": {
+                "input": 0.0000001,   # $0.1 per 1M tokens
+                "output": 0.0000002   # $0.2 per 1M tokens
             }
         }
         
