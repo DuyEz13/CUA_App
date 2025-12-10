@@ -14,4 +14,6 @@ class PlannerState(BaseModel):
 
     human_approved: Optional[bool] = None      
     interrupt_reason: Optional[str] = None      
-    approved: Optional[bool] = None 
+    approved: Optional[bool] = None
+
+    fail_reason_list: Optional[List] = None 
