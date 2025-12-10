@@ -53,8 +53,7 @@ class LMMEngineOpenAI(LMMEngine):
                 self.llm_client = OpenAI(
                     base_url=self.base_url, api_key=api_key, organization=organization
                 )
-        return (
-            self.llm_client.chat.completions.create(
+        msg = self.llm_client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 # max_completion_tokens=max_new_tokens if max_new_tokens else 4096,
@@ -63,9 +62,21 @@ class LMMEngineOpenAI(LMMEngine):
                 ),
                 **kwargs,
             )
-            .choices[0]
-            .message.content
-        )
+        print(msg)
+        return msg.choices[0].message.content
+        # return (
+        #     self.llm_client.chat.completions.create(
+        #         model=self.model,
+        #         messages=messages,
+        #         # max_completion_tokens=max_new_tokens if max_new_tokens else 4096,
+        #         temperature=(
+        #             temperature if self.temperature is None else self.temperature
+        #         ),
+        #         **kwargs,
+        #     )
+        #     .choices[0]
+        #     .message.content
+        # )
 
 
 class LMMEngineAnthropic(LMMEngine):
@@ -188,17 +199,26 @@ class LMMEngineGemini(LMMEngine):
             self.llm_client = OpenAI(base_url=base_url, api_key=api_key)
         # Use the temperature passed to generate, otherwise use the instance's temperature, otherwise default to 0.0
         temp = self.temperature if temperature is None else temperature
-        return (
-            self.llm_client.chat.completions.create(
+        msg = self.llm_client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 max_tokens=max_new_tokens if max_new_tokens else 4096,
                 temperature=temp,
                 **kwargs,
             )
-            .choices[0]
-            .message.content
-        )
+        print(msg)
+        return msg.choices[0].message.content
+        # return (
+        #     self.llm_client.chat.completions.create(
+        #         model=self.model,
+        #         messages=messages,
+        #         max_tokens=max_new_tokens if max_new_tokens else 4096,
+        #         temperature=temp,
+        #         **kwargs,
+        #     )
+        #     .choices[0]
+        #     .message.content
+        # )
 
 
 class LMMEngineOpenRouter(LMMEngine):
@@ -237,17 +257,26 @@ class LMMEngineOpenRouter(LMMEngine):
             self.llm_client = OpenAI(base_url=base_url, api_key=api_key)
         # Use self.temperature if set, otherwise use the temperature argument
         temp = self.temperature if self.temperature is not None else temperature
-        return (
-            self.llm_client.chat.completions.create(
+        msg = self.llm_client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 max_tokens=max_new_tokens if max_new_tokens else 4096,
                 temperature=temp,
                 **kwargs,
             )
-            .choices[0]
-            .message.content
-        )
+        print(msg)
+        return msg.choices[0].message.content
+        # return (
+        #     self.llm_client.chat.completions.create(
+        #         model=self.model,
+        #         messages=messages,
+        #         max_tokens=max_new_tokens if max_new_tokens else 4096,
+        #         temperature=temp,
+        #         **kwargs,
+        #     )
+        #     .choices[0]
+        #     .message.content
+        # )
 
 
 class LMMEngineAzureOpenAI(LMMEngine):
