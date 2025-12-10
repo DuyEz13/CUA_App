@@ -208,6 +208,7 @@ class MainWindow(QWidget):
             return
 
         self.log_box.append(f"Running: {query}")
+        self.input_field.clear()
 
         new_graph = PlannerGraph(engine_params)
         self.graph_thread = GraphThread(new_graph, query)
