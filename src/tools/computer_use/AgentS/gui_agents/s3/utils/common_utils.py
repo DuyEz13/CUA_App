@@ -42,7 +42,7 @@ def call_llm_safe(
     while attempt < max_retries:
         try:
             response = agent.get_response(
-                temperature=temperature, use_thinking=use_thinking, **kwargs
+                temperature=None, use_thinking=use_thinking, **kwargs
             )
             assert response is not None, "Response from agent should not be None"
             print("Response success!")
