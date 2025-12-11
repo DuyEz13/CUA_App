@@ -313,6 +313,10 @@ def _calculate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
         Pricing as of Dec 2024 (adjust these rates as needed):
         """
         pricing = {
+            "gpt-5-2025-08-07": {
+                "input": 0.000002,  # $2 per 1M tokens (example)
+                "output": 0.000006  # $6 per 1M tokens (example)
+            },
             "gpt-5": {
                 "input": 0.000002,  # $2 per 1M tokens (example)
                 "output": 0.000006  # $6 per 1M tokens (example)
