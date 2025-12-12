@@ -337,6 +337,10 @@ def _calculate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
                 "input": 0.0000003,   # $0.30 per 1M tokens
                 "output": 0.0000025   # $2.50 per 1M tokens
             },
+            "gemini-2.5-pro": {
+                "input": 0.00000125,   # $1.25 per 1M tokens (<= 200k tokens)
+                "output": 0.00001      # $10 per 1M tokens (<= 200k tokens)
+            },
             "bytedance/ui-tars-1.5-7b": {
                 "input": 0.0000001,   # $0.1 per 1M tokens
                 "output": 0.0000002   # $0.2 per 1M tokens
