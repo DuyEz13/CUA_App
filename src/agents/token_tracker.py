@@ -114,6 +114,14 @@ class TokenUsageLogger:
                 "input": 0.000002,  # $2 per 1M tokens (example)
                 "output": 0.000006  # $6 per 1M tokens (example)
             },
+            "gpt-5.1-2025-11-13": {
+                "input": 0.000002,  # $2 per 1M tokens (example)
+                "output": 0.000006  # $6 per 1M tokens (example)
+            },
+            "gpt-5.1": {
+                "input": 0.000002,  # $2 per 1M tokens (example)
+                "output": 0.000006  # $6 per 1M tokens (example)
+            },
             "gpt-5": {
                 "input": 0.000002,  # $2 per 1M tokens (example)
                 "output": 0.000006  # $6 per 1M tokens (example)
