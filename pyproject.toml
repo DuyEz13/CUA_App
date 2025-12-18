@@ -111,6 +111,7 @@ dependencies = [
     "pygetwindow==0.0.9",
     "pygments==2.19.2",
     "pymsgbox==2.0.1",
+    "pymupdf>=1.26.7",
     "pypdfium2==5.1.0",
     "pyperclip==1.11.0",
     "pyqt5==5.15.11",
