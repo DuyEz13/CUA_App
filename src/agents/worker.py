@@ -24,11 +24,11 @@ class Worker(BaseModule):
     
     def verify_step(self, query: str):
         self.v_s_agent.add_message(text_content=query, role="user")
-        signal, _ = call_llm_safe(
+        signal, full_rp = call_llm_safe(
             agent=self.v_s_agent,
             temperature=None
         )
-        return signal
+        return signal, full_rp
     
     def verify_cua_result(self, query: str):
         # response = self.v_agent.invoke(
@@ -51,8 +51,8 @@ class Worker(BaseModule):
     
     def pdf_extract(self, img, query: str):
         self.pdf_agent.add_message(text_content=query, image_content=img, role="user")
-        result, _ = call_llm_safe(
+        result, full_rp = call_llm_safe(
             agent=self.pdf_agent,
             temperature=None
         )
-        return result
+        return result, full_rp

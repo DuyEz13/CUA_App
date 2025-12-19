@@ -100,7 +100,8 @@ class PlannerGraph:
         print("-" * 60)
         print("Step verifying.....")
         print("-" * 60)
-        response = self.llm.step_verify_predict(state.steps[state.current_step])
+        response, full_rp = self.llm.step_verify_predict(state.steps[state.current_step])
+        _track_graph_node_tokens(state.current_step, full_rp, self.engine_params['model'], "Step Verifying Agent")
         if response[0] == 'F':
             return {
                 "form": True,
@@ -121,7 +122,8 @@ class PlannerGraph:
     
     def node_A_execute(self, state: PlannerState):
         print(state.form_info)
-        result = self.llm.pdf_extract(state.steps[state.current_step] + state.form_info, state.img_pdf_page)
+        result, full_rp = self.llm.pdf_extract(state.steps[state.current_step] + state.form_info, state.img_pdf_page)
+        _track_graph_node_tokens(state.current_step, full_rp, self.engine_params['model'], "PDF Extracting Agent")
         result = normalize_to_single_line(result)
         print(result)
         refined_step = state.steps
