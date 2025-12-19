@@ -11,6 +11,8 @@ class Worker(BaseModule):
         self.agent = self._create_agent(system_prompt=PROMPT.PLANNING)
         #self.v_agent = self._create_agent_lang(system_prompt=PROMPT.VERIFING)
         self.v_agent = self._create_agent(system_prompt=PROMPT.VERIFING)
+        self.v_s_agent = self._create_agent(system_prompt=PROMPT.STEP_VERIFYING)
+        self.pdf_agent = self._create_agent(system_prompt=PROMPT.PDF_EXTRACTOR)
 
     def plan_from_query(self, query: str):
         self.agent.add_message(text_content=query, role="user")
@@ -19,6 +21,14 @@ class Worker(BaseModule):
             temperature=None
         )
         return full_plan, full_rp
+    
+    def verify_step(self, query: str):
+        self.v_s_agent.add_message(text_content=query, role="user")
+        signal, _ = call_llm_safe(
+            agent=self.v_s_agent,
+            temperature=None
+        )
+        return signal
     
     def verify_cua_result(self, query: str):
         # response = self.v_agent.invoke(
@@ -38,3 +48,11 @@ class Worker(BaseModule):
             temperature=None
         )
         return signal, full_rp
+    
+    def pdf_extract(self, img, query: str):
+        self.pdf_agent.add_message(text_content=query, image_content=img, role="user")
+        result, _ = call_llm_safe(
+            agent=self.pdf_agent,
+            temperature=None
+        )
+        return result

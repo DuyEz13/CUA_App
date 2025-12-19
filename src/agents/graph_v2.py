@@ -1,6 +1,9 @@
 from langgraph.graph import StateGraph, END
 from agents.planner_state import PlannerState
 from agents.planner import Planner
+import fitz
+from PIL import Image
+from pathlib import Path
 import pyautogui
 import base64
 import io
@@ -12,7 +15,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import interrupt
 import uuid
 import os
-import logging
+import time
 from agents.token_tracker import TokenUsageLogger
 
 BASE_PATH = r'E:\test2\CUA_App\src\token_log'
@@ -34,6 +37,35 @@ def _track_graph_node_tokens(step: int, response_data: Any = None, model_name: s
         metadata={"step": step, "agent": agent_name}
     )
 
+def pixmap_to_pil(pix: fitz.Pixmap) -> Image.Image:
+    mode = "RGB" if pix.n < 4 else "RGBA"
+    return Image.frombytes(mode, [pix.width, pix.height], pix.samples)
+
+def pdf_extraction(file, index, output_path, dpi: int=200):
+    pdf_path = Path(r"C:\Users\NITRO 5", file)
+    doc = fitz.open(pdf_path)
+    print(pdf_path)
+    page = doc.load_page(int(index) - 1)
+
+    zoom = dpi / 72
+    mat = fitz.Matrix(zoom, zoom)
+
+    pix = page.get_pixmap(matrix=mat, alpha=False)
+    pix.save(r"E:\test2\CUA_App\src\pdf_pages\test.png")
+
+    screenshot = pixmap_to_pil(pix)
+
+    buffered = io.BytesIO()
+    screenshot.save(buffered, format="PNG")
+
+    screenshot_bytes = buffered.getvalue()
+
+    doc.close()
+    return screenshot_bytes
+
+def normalize_to_single_line(text: str) -> str:
+    return " ".join(text.split())
+
 class PlannerGraph:
     def __init__(self, engine_params: Dict):
         self.llm = Planner(engine_params)
@@ -46,7 +78,12 @@ class PlannerGraph:
     # NODES
 
     def node_make_plan(self, state: PlannerState):
+        start_time = time.time()
         plan_text, full_rp = self.llm.plan_predict(state.query)
+        end_time = time.time()
+        print("-" * 60)
+        print("Plan making time: ", end_time - start_time)
+        print("-" * 60)
         _track_graph_node_tokens(state.current_step, full_rp, self.engine_params['model'], "Planning Agent")
         return {
             "steps": plan_text,
@@ -54,6 +91,51 @@ class PlannerGraph:
             "cua_result": None,
             "fail_reason_list": [],
         }
+    
+    def node_step_verify(self, state: PlannerState):
+        if state.current_step == len(state.steps):
+            return {
+                "decision": "NO_PDF"
+            }
+        print("-" * 60)
+        print("Step verifying.....")
+        print("-" * 60)
+        response = self.llm.step_verify_predict(state.steps[state.current_step])
+        if response[0] == 'F':
+            return {
+                "form": True,
+                "decision": "NO_PDF"
+            }
+        if response[0] == 'P':
+            _, file, index = response.split(' - ')
+            print(index)
+            img_pdf_page = pdf_extraction(file, index, r"E:\test2\CUA_App\src\pdf_pages")
+            return {
+                "decision": "PDF",
+                "img_pdf_page": img_pdf_page
+            }
+        else:
+            return {
+                "decision": "NO_PDF"
+            }
+    
+    def node_A_execute(self, state: PlannerState):
+        print(state.form_info)
+        result = self.llm.pdf_extract(state.steps[state.current_step] + state.form_info, state.img_pdf_page)
+        result = normalize_to_single_line(result)
+        print(result)
+        refined_step = state.steps
+        refined_step[state.current_step] = result
+        return {
+            "pdf_info": result,
+            "steps": refined_step,
+            'img_pdf_page': None
+        }
+    
+    def route_after_step_verify(self, state: PlannerState):
+        if state.decision == "PDF":
+            return "PDF_execute"
+        return "verify"
     
     def node_interrupt(self, state: PlannerState):
         reason = state.interrupt_reason
@@ -78,7 +160,12 @@ class PlannerGraph:
 
         if state.cua_result is not None and state.cua_result["signal"] == "Fail":
             cua_result_str = json.dumps(state.cua_result, ensure_ascii=False)
+            start_time = time.time()
             verify_result, full_rp = self.llm.verify_predict(cua_result_str)
+            end_time = time.time()
+            print("-" * 60)
+            print('Verification time: ', end_time - start_time)
+            print("-" * 60)
             _track_graph_node_tokens(state.current_step, full_rp, self.engine_params['model'], "Verifying Agent")
             reason = verify_result[2:]
 
@@ -86,6 +173,7 @@ class PlannerGraph:
                 return {
                     "decision": "INTERRUPT",
                     "interrupt_reason": reason,
+                    "current_step": state.current_step - 1,
                     "fail_reason_list": state.fail_reason_list + [reason]
                 }
             else:
@@ -114,7 +202,12 @@ class PlannerGraph:
         print(step)
         print("-" * 60)
         step = "Only do the following instruction. Do not do anything beside it. " + step
+        start_time = time.time()
         response = run_computer_use_with_query(step)
+        end_time = time.time()
+        print("-" * 60)
+        print('Elapsed time:', end_time - start_time)
+        print("-" * 60)
         filename = f"cua_step_{state.current_step + 1}.txt"
         file_path = os.path.join(task_path, filename)
         print(file_path)
@@ -124,6 +217,14 @@ class PlannerGraph:
         token_log = parse_token_usage(response)
         write_token_log_txt(token_log, file_path)
         print(response)
+        if state.form == True:
+            return {
+                "step_result": step,
+                "current_step": state.current_step + 1,
+                "response": response,
+                "cua_result": cua_result,
+                "form_info": cua_result['next_action']
+            }
         return {
             "step_result": step,
             "current_step": state.current_step + 1,
@@ -135,13 +236,26 @@ class PlannerGraph:
         g = StateGraph(PlannerState)
 
         g.add_node("make_plan", self.node_make_plan)
+        g.add_node("step_verify", self.node_step_verify)
+        g.add_node("PDF_execute", self.node_A_execute)
         g.add_node("verify", self.node_verify)
         g.add_node("interrupt", self.node_interrupt)
         g.add_node("cua_execute", self.node_cua_execute)
 
         g.set_entry_point("make_plan")
 
-        g.add_edge("make_plan", "verify")
+        g.add_edge("make_plan", "step_verify")
+
+        # g.add_edge("make_plan", "verify")
+
+        g.add_conditional_edges(
+            "step_verify",
+            self.route_after_step_verify,
+            {
+                "PDF_execute": "PDF_execute",
+                "verify": "verify"
+            }
+        )
 
         g.add_conditional_edges(
             "verify",
@@ -153,10 +267,13 @@ class PlannerGraph:
                 "end": END
             }
         )
+        
+        g.add_edge("PDF_execute", "verify")
 
         g.add_edge("interrupt", "verify")
 
-        g.add_edge("cua_execute", "verify")
+        #g.add_edge("cua_execute", "verify")
+        g.add_edge("cua_execute", "step_verify")
 
         return g.compile(checkpointer=self.checkpointer)
 

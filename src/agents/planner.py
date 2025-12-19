@@ -36,6 +36,12 @@ class Planner:
 
         return self.full_step, full_rp
     
+    def step_verify_predict(self, step):
+        return self.executor.verify_step(step)
+    
     def verify_predict(self, query):
         self.verify_cua_result, full_rp = self.executor.verify_cua_result(query)
         return self.verify_cua_result, full_rp
+    
+    def pdf_extract(self, query, img):
+        return self.executor.pdf_extract(query=query, img=img)

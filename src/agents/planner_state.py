@@ -17,3 +17,9 @@ class PlannerState(BaseModel):
     approved: Optional[bool] = None
 
     fail_reason_list: Optional[List] = None 
+
+    form: Optional[bool] = False
+    form_info: Optional[str] = None
+
+    img_pdf_page: Optional[bytes] = None
+    pdf_info: Optional[str] = None
