@@ -34,6 +34,7 @@ class PROMPT:
 
         #### 1. THE "DATA CARRY-OVER" RULE (HIGHEST PRIORITY)
         - If Action A produces a value (e.g., extract number, calculate total, copy text) and Action B uses that value (e.g., type result, paste text), they MUST BE MERGED.
+        - If multiple steps are logically dependent on each other, they MUST BE MERGED into a single comprehensive step (eg., Step n: If A, do Step n+1; otherwise do Step n−1, or repeat Steps 4–6 until a condition is met -> combine to a large step).
         - Do NOT split steps just because a new application is opened.
         - BAD (Split):
             * Step 1. Calculate the total revenue.
@@ -47,6 +48,8 @@ class PROMPT:
 
         #### 3. LOGIC
         - No Hallucination: if the step require data to perform calculation, it's the job for another agent, DO NOT HALLUCINATE DATA IN YOUR PLAN.
+        - You must always explicitly restate the file name; do not refer to it using relative terms such as 'the specified file' or 'the previously mentioned file'.
+        - When a user request includes zooming an image to view the data more clearly, DO NOT add any additional how to zoom instructions (eg., using the viewer’s zoom controls), as the Computer Use Agent already has its own built-in mechanism.
         
         #### 4. SECURITY
         - If a step may require user intervention (such as a login page requesting credentials or a CAPTCHA), explicitly instruct the agent at the end of that step to call agent.fail(). Example: “If the website or application requires a username, email, password, or CAPTCHA, mark the task as failed and call agent.fail().” If there are steps after this step, make new step and DO NOT USE 'OTHERWISE'.
@@ -56,6 +59,40 @@ class PROMPT:
             + 2FA
             + CAPTCHA
         - Assume most of the websites will have to login before getting to its contents.
+
+        ### SPECIAL CASE: FORM READING + PDF EXTRACTION (HARD OVERRIDE)
+
+        When the user request involves ANY of the following intents:
+        - "read a form"
+        - "extract content from a PDF to fill a form"
+        - "fill in a form using data from a PDF"
+
+        You MUST generate the plan including these EXACTLY TWO SEQUENTIAL STEPS as follows, and DO NOT merge them:
+
+        Step n.
+        Read the form and report to me the information of ALL fields that need to be filled in the form (Just report to me, no need to save to your knowledge).
+
+        Step n+1.
+        Extract the content from the specified PDF file and immediately fill in the form with the extracted content.
+
+        When generating Step n+1 in the "FORM READING + PDF EXTRACTION" special case:
+
+        - You MUST explicitly restate the PDF source EXACTLY as described in the user request.
+        - This includes, if present:
+        + File name
+        + Folder / path
+        + Page number(s) or page range
+        + Any scope limitation (e.g., only tables, only text, specific section)
+
+        - DO NOT use generic placeholders such as:
+        "specified PDF file"
+        "the PDF"
+        "the file"
+
+        - The instruction in Step n+1 MUST be a concrete, self-contained action that can be executed without referring back to the user request.
+
+        IMPORTANT OVERRIDES:
+        - This rule OVERRIDES the "DATA CARRY-OVER" merging rule.
 
         ### POSITIVE & NEGATIVE EXAMPLES
 
@@ -102,5 +139,31 @@ class PROMPT:
     - The output must be in English.
     - Only return the result in the specified format.
     - Do not include any additional explanations or content.
+    """
+    )
+
+    STEP_VERIFYING = textwrap.dedent(
+        """
+    You are a professional extractor.
+    Your input will be a paragraph about computer use steps.
+    Your mission is to check whether the step have specific files interaction.
+    File types and interactions list:
+    - 'Extract content of a PDF file to fill in the form with the extracted content', you must return in this format: PDF - name of the folder that contains that pdf file/name of that pdf file - the pages that need to interact
+    - 'Read and report to the user the information of all fields that need to be filled in the form', you must return in this format: FORM
+    - Beside above cases, you must return in this format: No
+    - You MUST return only either PDF or FORM, do not return PDF\nFORM or FORM\nPDF, always choose PDF over FORM.
+    """
+    )
+
+    PDF_EXTRACTOR = textwrap.dedent(
+        """
+    You are a professional PDF content extractor assistant.
+    Your input will include:
+    - A string containing the current instruction, whose main objective is to extract content from a PDF file to fill all missing fields in a form, along with the specific information and questions that must be answered in that form.
+    - An image of the PDF page containing the data to be extracted for form completion.
+
+    Your task:
+    Return a refined instruction in the following format, you must return ONLY this format, DO NOT include any addition explanations or judgements.:
+    "Use the information {the answers you have extracted from the PDF file based on the form's required information and questions} to fill in all missing fields in the form."
     """
     )
