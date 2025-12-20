@@ -254,55 +254,109 @@ PROMPT_RE = re.compile(r"prompt_tokens=(\d+)")
 COMPLETION_RE = re.compile(r"completion_tokens=(\d+)")
 TOTAL_RE = re.compile(r"total_tokens=(\d+)")
 
+# def parse_token_usage(stdout: str):
+#     calls = []
+
+#     last_step_context = "Unknown"
+
+#     inside_block = False
+#     buffer = []
+#     paren_balance = 0
+#     block_context = None
+
+#     for line in stdout.splitlines():
+#         # 1. Update step context
+#         step_match = STEP_RE.search(line)
+#         if step_match:
+#             step = step_match.group(1)
+#             last_step_context = f"Step {step}"
+#             continue
+
+#         # 2. Start ChatCompletion block
+#         if "ChatCompletion(" in line:
+#             inside_block = True
+#             buffer = [line]
+#             paren_balance = line.count("(") - line.count(")")
+#             block_context = last_step_context  # ✅ snapshot context
+#             continue
+
+#         # 3. Collect block
+#         if inside_block:
+#             buffer.append(line)
+#             paren_balance += line.count("(")
+#             paren_balance -= line.count(")")
+
+#             if paren_balance == 0:
+#                 block = "\n".join(buffer)
+#                 inside_block = False
+
+#                 model = MODEL_RE.search(block)
+#                 prompt = PROMPT_RE.search(block)
+#                 completion = COMPLETION_RE.search(block)
+#                 total = TOTAL_RE.search(block)
+
+#                 if all([model, prompt, completion, total]):
+#                     calls.append({
+#                         "model": model.group(1),
+#                         "context": block_context,
+#                         "input_tokens": int(prompt.group(1)),
+#                         "output_tokens": int(completion.group(1)),
+#                         "total_tokens": int(total.group(1)),
+#                     })
+
+#     return calls
+
+# New version
 def parse_token_usage(stdout: str):
     calls = []
-
     last_step_context = "Unknown"
 
     inside_block = False
     buffer = []
-    paren_balance = 0
     block_context = None
 
+    def flush_block():
+        nonlocal buffer, inside_block, block_context
+        block = "\n".join(buffer)
+
+        model = MODEL_RE.search(block)
+        prompt = PROMPT_RE.search(block)
+        completion = COMPLETION_RE.search(block)
+        total = TOTAL_RE.search(block)
+
+        if all([model, prompt, completion, total]):
+            calls.append({
+                "model": model.group(1),
+                "context": block_context,
+                "input_tokens": int(prompt.group(1)),
+                "output_tokens": int(completion.group(1)),
+                "total_tokens": int(total.group(1)),
+            })
+
+        buffer = []
+        inside_block = False
+        block_context = None
+
     for line in stdout.splitlines():
-        # 1. Update step context
         step_match = STEP_RE.search(line)
         if step_match:
-            step = step_match.group(1)
-            last_step_context = f"Step {step}"
+            last_step_context = f"Step {step_match.group(1)}"
             continue
 
-        # 2. Start ChatCompletion block
         if "ChatCompletion(" in line:
+            if inside_block:
+                flush_block()
+
             inside_block = True
             buffer = [line]
-            paren_balance = line.count("(") - line.count(")")
-            block_context = last_step_context  # ✅ snapshot context
+            block_context = last_step_context
             continue
 
-        # 3. Collect block
         if inside_block:
             buffer.append(line)
-            paren_balance += line.count("(")
-            paren_balance -= line.count(")")
 
-            if paren_balance == 0:
-                block = "\n".join(buffer)
-                inside_block = False
-
-                model = MODEL_RE.search(block)
-                prompt = PROMPT_RE.search(block)
-                completion = COMPLETION_RE.search(block)
-                total = TOTAL_RE.search(block)
-
-                if all([model, prompt, completion, total]):
-                    calls.append({
-                        "model": model.group(1),
-                        "context": block_context,
-                        "input_tokens": int(prompt.group(1)),
-                        "output_tokens": int(completion.group(1)),
-                        "total_tokens": int(total.group(1)),
-                    })
+    if inside_block:
+        flush_block()
 
     return calls
 
