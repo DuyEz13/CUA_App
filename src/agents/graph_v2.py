@@ -131,7 +131,8 @@ class PlannerGraph:
         return {
             "pdf_info": result,
             "steps": refined_step,
-            'img_pdf_page': None
+            "img_pdf_page": None,
+            "form": False
         }
     
     def route_after_step_verify(self, state: PlannerState):
