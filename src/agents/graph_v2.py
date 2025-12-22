@@ -157,7 +157,7 @@ class PlannerGraph:
         if state.human_approved is True:
             return {
                 "human_approved": None,
-                "current_step": state.current_step - 1,
+                #"current_step": state.current_step - 1,
                 "decision": "RETRY"
             }
 
